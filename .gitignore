@@ -1,0 +1,4 @@
+*.log
+.env*
+recordings/
+__pycache__/

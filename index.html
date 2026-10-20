@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="AIアセットの12の部署を、働く社員のアニメーションで見渡せる公開デモです。">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'">
+<title>AIアセット｜動く全社オフィス</title><link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<header><a class="brand" href="./"><span class="brand-mark">AI</span><span>AIアセット<small>COMPANY OFFICE</small></span></a><span class="badge">公開デモ</span></header>
+<main>
+<div class="intro"><p class="eyebrow">ONE COMPANY, MANY MOVING PARTS</p><h1>会社全体が、ひとつのチームに。</h1><p>12の部屋を見渡しながら、仕事が進むオフィスの風景を。</p></div>
+<div class="toolbar">
+<div class="controls"><button id="pause" aria-pressed="false">一時停止</button><label>速さ <select id="speed"><option value=".5">ゆっくり</option><option value="1" selected>標準</option><option value="1.6">速め</option></select></label><label>注目する部署 <select id="department"><option value="all">会社全体</option></select></label></div>
+<div class="controls"><button id="fullscreen">全画面</button><button id="record" class="record">動画を録画</button></div>
+</div>
+<div class="stage" id="stage"><canvas id="office" width="1920" height="1080" aria-label="12部署でパソコン作業・資料運び・打合せをする社員の演出アニメーション"></canvas></div>
+<p id="notice" role="status">部屋を押すと、その部署に注目できます。動きはすべて演出です。</p>
+<p class="disclosure">公開用のアニメーションです。実際の社員数・業務状況・AIの稼働状況を示すものではありません。実ログとの接続はありません。</p>
+<footer>株式会社Ｍｙアセット　営業戦略担当 <span>AI ASSET / OFFICE ANIMATION</span></footer>
+</main><script src="./app.js"></script>
+</body></html>
