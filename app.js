@@ -5,7 +5,7 @@ const palette=["#90d6c4","#e3bd7a","#a9bdf0","#80c5d0","#b4cda0","#dba8b2","#a9a
 const names=["経営企画室","仕入部","審査業務部","販売部","業務部","広報販促部","新規事業部","情報システム部","総務部","関連事業","建築部","財務部"];
 const roomWork=["事業計画","物件情報の整理","資料の確認","販売提案","契約書類の整理","広告の制作","事業の検討","システムの開発","社内の調整","事業の企画","設計・積算","収支の確認"];
 const rooms=()=>names.map((name,i)=>({name,id:String(i).padStart(2,"0"),index:i,x:32+(i%4)*470,y:152+Math.floor(i/4)*240,w:446,h:222,color:palette[i]}));
-let selectedDept="all",paused=false,speed=1,elapsed=0,previous=performance.now(),recorder,recordTimer;
+let selectedDept="all",paused=false,speed=1.35,elapsed=0,previous=performance.now(),recorder,recordTimer;
 function text(value,x,y,size=20,color="#edf4f7",weight=400,align="left") {
   ctx.fillStyle=color;ctx.font=`${weight} ${size}px "Yu Gothic UI","Meiryo",sans-serif`;ctx.textAlign=align;ctx.textBaseline="middle";ctx.fillText(value,x,y);ctx.textAlign="left";
 }
@@ -38,12 +38,12 @@ function desk(x,y,accent,on=false){
   rect(x+24,y+49,28,16,"#76939c",6);rect(x+21,y+43,34,12,"#8aa6ad",5);
 }
 function person(x,y,color,walking,t,active=false){
-  const bob=walking?Math.sin(t*13)*2:active?Math.sin(t*4)*.7:0;
+  const bob=walking?Math.sin(t*19)*3.3:active?Math.sin(t*9)*1.8:0;
   ctx.save();ctx.translate(Math.round(x),Math.round(y+bob));
   ctx.fillStyle="#122a3340";ctx.beginPath();ctx.ellipse(0,17,16,6,0,0,Math.PI*2);ctx.fill();
-  const leg=walking?Math.sin(t*13)*4:0;
+  const leg=walking?Math.sin(t*19)*6:0;
   rect(-9,5+leg,7,12,"#334c60",2);rect(2,5-leg,7,12,"#334c60",2);
-  const hand=active&&!walking?Math.sin(t*8)*4:0;
+  const hand=walking?Math.sin(t*19)*6:active?Math.sin(t*16)*6:0;
   rect(-12,-12,24,22,color,5);rect(-16,-8+hand,5,15,"#e8be9c",3);rect(11,-8-hand,5,15,"#e8be9c",3);
   circle(0,-23,13,"#e9bf9b");rect(-13,-34,26,10,"#33434e",5);rect(-14,-28,5,10,"#33434e",2);
   rect(-7,-24,3,3,"#33434e");rect(5,-24,3,3,"#33434e");rect(-3,-15,6,2,"#b37665");
@@ -72,20 +72,39 @@ function drawRoom(r,t,visible){
     rect(dx,r.y+49,75,10,"#b5d4da",2);line(dx+38,r.y+49,dx+38,r.y+59,"#eff8f6",2);
     desk(dx,r.y+70,r.color,true);
     for(let q=0;q<3;q++)rect(dx+25,r.y+81+q*4,10+(Math.sin(phase*2+q)+1)*5,2,"#effff0",1);
-    person(dx+37,r.y+130,[r.color,"#91a9c4","#cd9d84"][k],false,phase,true);
-    if((phase%9)<2.4){
-      rect(dx+48,r.y+111,25,17,"#f7fbef",4);
-      for(let b=0;b<3;b++)circle(dx+54+b*6,r.y+119,1.6,"#659391");
-    }
   }
   plant(r.x+407,r.y+90,.85);
   rect(r.x+385,r.y+132,44,39,"#c9baa0",3);
   for(let k=0;k<4;k++)rect(r.x+390+k*8,r.y+138,6,25,["#8ba8b7","#d4af86","#98bda9","#c28c83"][k],1);
-  const phase=(t*.085+r.index*.17)%1;
-  const walkX=r.x+60+Math.sin(phase*Math.PI)*302;
-  person(walkX,r.y+177,r.color,true,t+r.index);
-  rect(walkX+9,r.y+163,15,20,"#faf4df",2);
-  line(walkX+12,r.y+168,walkX+21,r.y+168,"#97ada5",1);
+  const staff=[];
+  for(let k=0;k<3;k++){
+    const phase=(t*(1+k*.07)+r.index*1.31+k*3.3)%10;
+    const home=r.x+62+k*120, destination=r.x+125+((k+r.index)%3)*84;
+    let f=0;
+    if(phase>=2.5&&phase<5)f=(phase-2.5)/2.5;
+    else if(phase>=5&&phase<6.6)f=1;
+    else if(phase>=6.6)f=1-(phase-6.6)/3.4;
+    // Walk via the aisle, then return to the workstation; every agent has its own phase.
+    const p=Math.min(1,Math.max(0,f));
+    const x=p<.3?home:home+(destination-home)*(p-.3)/.7;
+    const y=r.y+130+Math.min(1,p/.3)*(38+k*6);
+    staff.push({x,y,color:[r.color,"#91a9c4","#cd9d84"][k],walk:phase>=2.5&&!(phase>=5&&phase<6.6),phase:t+k*2+r.index,label:phase<2.5?"作成中":phase<5?"確認へ":phase<6.6?"相談中":"次の仕事へ",paper:phase>=2.5});
+  }
+  for(let k=0;k<2;k++){
+    const phase=t*(1.55+k*.2)+r.index*1.7+k*Math.PI;
+    const x=r.x+60+(1-Math.cos(phase))*151,y=r.y+174+k*10;
+    staff.push({x,y,color:k?"#a9bdf0":r.color,walk:true,phase:t+k+r.index,label:k?"連携中":"資料をお届け",paper:true});
+  }
+  staff.sort((a,b)=>a.y-b.y).forEach(s=>{
+    if(s.walk){line(s.x-24,s.y+4,s.x-17,s.y+4,"#8aaba0",2);line(s.x-28,s.y+10,s.x-19,s.y+10,"#a8bfb3",2);}
+    person(s.x,s.y,s.color,s.walk,s.phase,true);
+    if(s.paper){rect(s.x+8,s.y-17,17,21,"#fff7df",2);line(s.x+11,s.y-11,s.x+21,s.y-11,"#91aaa1",1);}
+    if(Math.sin(t*2.3+s.phase)>0.4){
+      const labelW=s.label.length*10+12;
+      rect(s.x-labelW/2,s.y-57,labelW,18,"#fffdf1",5);
+      text(s.label,s.x,s.y-48,10,"#48736c",600,"center");
+    }
+  });
   rect(r.x+8,r.y+r.h-25,r.w-16,20,"#f0f3e9",3);
   text(roomWork[r.index]+"〈演出〉",r.x+16,r.y+r.h-14,13,"#536f74",500);
   text("AI ASSET",r.x+r.w-15,r.y+r.h-14,13,"#536f74",400,"right");
@@ -97,15 +116,16 @@ function drawCompanyLounge(t){
   text("共用スペース〈演出〉",1060,905,14,"#6b8783",400,"right");
   rect(58,930,130,57,"#f2f5e9",4,"#93aaa3");
   for(let k=0;k<4;k++)rect(70+k*26,971-(k+1)*7,16,(k+1)*7, palette[k],2);
-  person(216,978,"#90d6c4",false,t,true);
-  person(323,963,"#e3bd7a",false,t+2,true);
-  person(421,963,"#a9bdf0",false,t+4,true);
+  person(216+Math.sin(t*1.8)*16,978,"#90d6c4",true,t,true);
+  person(323+Math.sin(t*2)*13,963,"#e3bd7a",false,t+2,true);
+  person(421+Math.cos(t*1.8)*12,963,"#a9bdf0",false,t+4,true);
   rect(283,975,186,30,"#b49576",10);rect(289,975,174,23,"#e0c7a3",8);
   for(let k=0;k<3;k++){rect(310+k*52,978,25,16,"#eff4e8",2);line(315+k*52,983,329+k*52,983,"#91aaa2");}
-  const x=530+(Math.sin(t*.45)+1)*105;
+  const x=530+(Math.sin(t*1.8)+1)*105;
   person(x,977,"#b4cda0",true,t);
   rect(x+9,961,15,20,"#f3e7cd",2);
-  person(887,969,"#dba8b2",false,t+1,true);
+  person(887+Math.sin(t*2)*18,969,"#dba8b2",true,t+1,true);
+  person(550+(Math.cos(t*1.6)+1)*105,1001,"#c7b18d",true,t+3,true);
   rect(804,977,184,30,"#b99b7a",5);rect(810,977,172,22,"#e0c7a3",4);
   text("AI ASSET",895,988,14,"#536d68",700,"center");plant(1038,982,1.1);
 }
@@ -117,7 +137,7 @@ function draw(t){
   rect(1620,24,268,52,"#2b4944",10);
   text("公開デモ · オフィスの演出",1754,50,18,"#c9e9dd",600,"center");
   text("12の部屋で広がる、それぞれの仕事。",32,125,20,"#c5e6db",600);
-  text(paused?"一時停止中":"パソコン作業 / 資料運び / 打合せ",1888,125,17,"#a8c2ca",400,"right");
+  text(paused?"一時停止中":"わちゃわちゃ稼働中〈演出〉 / 作業・相談・資料リレー",1888,125,17,"#a8c2ca",400,"right");
   rect(20,144,1880,724,"#819796",12);
   for(let y=152;y<868;y+=16)line(20,y,1900,y,"#b8c6bf11");
   rooms().forEach(r=>drawRoom(r,t,[]));
